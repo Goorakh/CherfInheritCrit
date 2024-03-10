@@ -1,0 +1,13 @@
+﻿{
+	"name": "ChargedPerforatorInheritCrit",
+	"authorName": "Gorakh",
+	"displayName": "Charged Perforator Inherit Crit",
+	"version_number": "1.0.0",
+	"website_url": "https://github.com/Goorakh/CherfInheritCrit",
+	"description": "Makes Charged Perforator procs inherit the crit state of the damage that procced it instead of rolling a crit seperately",
+	"dependencies": [
+		"bbepis-BepInExPack-5.4.2113",
+		"RiskofThunder-HookGenPatcher-1.2.3",
+		"RiskofThunder-R2API_Core-5.0.12"
+	]
+}
