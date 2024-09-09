@@ -1,4 +1,5 @@
 using BepInEx;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.Utils;
@@ -27,7 +28,7 @@ namespace CherfInheritCrit
 
             Instance = SingletonHelper.Assign(Instance, this);
 
-            IL.RoR2.GlobalEventManager.OnHitEnemy += GlobalEventManager_OnHitEnemy;
+            IL.RoR2.GlobalEventManager.ProcessHitEnemy += GlobalEventManager_ProcessHitEnemy;
 
             stopwatch.Stop();
             Log.Info_NoCallerPrefix($"Initialized in {stopwatch.Elapsed.TotalSeconds:F2} seconds");
@@ -35,26 +36,27 @@ namespace CherfInheritCrit
 
         void OnDestroy()
         {
-            IL.RoR2.GlobalEventManager.OnHitEnemy -= GlobalEventManager_OnHitEnemy;
+            IL.RoR2.GlobalEventManager.ProcessHitEnemy -= GlobalEventManager_ProcessHitEnemy;
 
             Instance = SingletonHelper.Unassign(Instance, this);
         }
 
-        static void GlobalEventManager_OnHitEnemy(ILContext il)
+        static void GlobalEventManager_ProcessHitEnemy(ILContext il)
         {
             ILCursor c = new ILCursor(il);
 
-            int damageInfoParameterIndex = -1;
+            ParameterDefinition damageInfoParameter = null;
             for (int i = 0; i < il.Method.Parameters.Count; i++)
             {
-                if (il.Method.Parameters[i].ParameterType.Is(typeof(DamageInfo)))
+                ParameterDefinition parameterDefinition = il.Method.Parameters[i];
+                if (parameterDefinition.ParameterType.Is(typeof(DamageInfo)))
                 {
-                    damageInfoParameterIndex = i;
+                    damageInfoParameter = parameterDefinition;
                     break;
                 }
             }
 
-            if (damageInfoParameterIndex == -1)
+            if (damageInfoParameter == null)
             {
                 Log.Error("Failed to find DamageInfo parameter");
                 return;
@@ -64,7 +66,7 @@ namespace CherfInheritCrit
             {
                 if (c.TryGotoNext(MoveType.Before, x => x.MatchStfld<GenericDamageOrb>(nameof(GenericDamageOrb.isCrit))))
                 {
-                    c.Emit(OpCodes.Ldarg, damageInfoParameterIndex);
+                    c.Emit(OpCodes.Ldarg, damageInfoParameter);
                     c.EmitDelegate((bool isCrit, DamageInfo damageInfo) =>
                     {
                         return damageInfo.crit;
